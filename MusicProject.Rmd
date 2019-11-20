@@ -1,0 +1,68 @@
+---
+author: Aaron Nicanor
+title: "MusicProject"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Music Project
+
+#Initializing
+```{r}
+library("tidyverse")
+library("ggplot2")
+library("stringr")
+Person <- read.csv(file="music-survey.csv", header=TRUE, sep=",")
+FavoriteSong <- read.csv(file="preferences-survey.csv", header=TRUE, sep=",")
+```
+
+#Rename Col Names
+```{r}
+colnames(Person)[colnames(Person)=="Timestamp"] <- "time_submitted"
+colnames(Person)[colnames(Person)=="First..we.are.going.to.create.a.pseudonym.for.you.to.keep.this.survey.anonymous..more.or.less...Which.pseudonym.generator.would.you.prefer."] <- "pseudonym_generator"
+colnames(Person)[colnames(Person)=="What.is.your.pseudonym."] <- "pseudonym"
+colnames(Person)[colnames(Person)=="Sex"] <- "sex"
+colnames(Person)[colnames(Person)=="Major"] <- "academic_major"
+colnames(Person)[colnames(Person)=="Academic.Year"] <- "academic_level"
+colnames(Person)[colnames(Person)=="Year.you.were.born..YYYY."] <- "year_born"
+colnames(Person)[colnames(Person)=="Which.musical.instruments.talents.do.you.play...Select.all.that.apply."] <- "instrument_list"
+colnames(Person)[colnames(Person)=="Artist"] <- "favorite_song_artist"
+colnames(Person)[colnames(Person)=="Song"] <- "favorite_song"
+colnames(Person)[colnames(Person)=="Link.to.song..on.Youtube.or.Vimeo."] <- "favorite_song_link"
+
+colnames(FavoriteSong) <- gsub(x = names(FavoriteSong), pattern = "\\.", replacement = "")
+colnames(FavoriteSong)[colnames(FavoriteSong)=="Whatwasyourpseudonym"] <- "pseudonym"
+```
+
+#Cleaning Data
+```{r}
+levels(Person$academic_major)[levels(Person$academic_major)=="Computer information systems"]<-"Computer Information Systems"
+```
+
+#Creating the Ratings Table
+```{r}
+Rating <- gather(FavoriteSong, "favorite_song", "rating", 3:45)
+Rating <- subset(Rating, select = -c(Timestamp))
+```
+
+#Displaying Tables
+```{r}
+head(Person)
+head(FavoriteSong)
+head(Rating)
+```
+
+#JoinTwoTables pseudonym, favorite song, rated
+```{r}
+Person$favorite_song <- str_replace_all(Person$favorite_song, " ", "")
+Person$favorite_song_artist <- str_replace_all(Person$favorite_song_artist, " ", "")
+Person$favorite_song <- paste(Person$favorite_song_artist, Person$favorite_song)
+Person$favorite_song <- str_replace_all(Person$favorite_song, " ", "")
+
+FavSongRating <- Person %>%
+  select(pseudonym, favorite_song) %>%
+  left_join(Rating, by="pseudonym")
+```

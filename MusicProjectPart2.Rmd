@@ -1,0 +1,42 @@
+---
+title: "MusicProjectPart2"
+author: "Aaron Nicanor"
+date: "11/14/2019"
+output: html_document
+---
+
+Our goal with this assignment is to perform a multiple linear regression on the Music Insights data. First, I'll run the code I had made prior.
+```{r}
+suppressMessages(library("tidyverse"))
+suppressMessages(library("knitr"))
+suppressMessages(library("stringr"))
+suppressMessages(library("caret"))
+suppressMessages(library("dplyr"))
+suppressMessages(purl("MusicProject.Rmd", output = "MusicProject.r"))
+source("MusicProject.r")
+```
+
+I'll need to add some continuous data to the Person table. What I decided to do is add in the number of instruments that the person plays. The code below is me doing so.
+```{r}
+PersonModeling <- Person
+#Change all empty repsonses to NA, and the one instance of a person saying "none" into an NA value as well.
+PersonModeling$instrument_list[PersonModeling$instrument_list==""]<-NA
+PersonModeling$instrument_list[PersonModeling$instrument_list=="None"]<-NA
+
+#Anyone with NA as their response will have their instrument count set to 0, while everyone else who did submit a response must've played at least one instrument. I then add all the seperators within their responses and add it to their instrument count.
+PersonModeling$instrument_count <- str_count(PersonModeling$instrument_list, ",") + 1
+PersonModeling$instrument_count[is.na(PersonModeling$instrument_list)] <- 0
+```
+
+Here, I split the data into two tables: a train and test table.
+```{r}
+index <- createDataPartition(PersonModeling$instrument_count, p = 0.75, list = FALSE)
+train <- PersonModeling[index, ]
+test <- PersonModeling[-index, ]
+```
+
+Now, I test the predictors of my chosen dependant variable (in this case, it's instrument_count) to observe if there's any relation. My independant variables are academic_major, academic_level, year_born, and sex. Using the summary function, I can find which independant variable is likely to predict the instrument count of a person.
+```{r}
+train_model <- lm(train, formula = instrument_count ~ academic_major + academic_level + year_born + sex)
+summary(train_model)
+```
